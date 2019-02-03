@@ -4,54 +4,107 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 use App\User;
-
+use DB;
 class UserController extends Controller
 {
     public function index()
     {
-    	$user = User::orderBy('created_at','DESC')->paginate(10);
-    	return view('users.index',compact('user'));
+    	$users = User::orderBy('created_at','DESC')->paginate(10);
+    	return view('users.index',compact('users'));
     }
 
     public function create()
     {
-    	$role = Role::orderBy('created_at','DESC')->get();
+    	$role = Role::orderBy('created_at','ASC')->get();
     	return view('users.create',compact('role'));
     }
 
-    public function store(Request$request)
+    public function store(Request $request)
     {
-    	$this->validate($request,[
+    	$this->validate($request, [
     		'name' => 'required|string|max:100',
     		'email' => 'required|email|unique:users',
     		'password' => 'required|min:6',
-    		'role' => 'required|string|exist:role,name'
+    		'role' => 'required|string|exists:roles,name'
     	]);
-
-    	$user = User::findOrCreate([
+    	$user = User::firstOrCreate([
     		'email' => $request->email
     	],[
-    		'name' =>$request->name,
+    		'name' => $request->name,
     		'password' => bcrypt($request->password),
-    		'status' => true
+    		'status' => false
     	]);
     	$user->assignRole($request->role);
     	return redirect(route('users.index'))->with(['success' => 'User: <strong>' . $user->name . '</strong> DiTambahkan']);
     }
 
+    public function roles(Request $request,$id)
+    {
+    	$user = User::findOrFail($id);
+    	$roles = Role::all()->pluck('name');
+    	return view('users.roles',compact('user','roles'));
+    }
+    public function setRole(Request $request,$id)
+    {
+    	$this->validate($request,[
+    		'role' => 'required'
+    	]);
+    	$user = User::findOrFail($id);
+    	$user->syncRoles($request->role);
+    	return redirect()->back()->with(['success' => 'Role sudah di set']);
+    }
+    public function rolePermission(Request $request)
+    {
+    	$role = $request->get('role');
+
+    	$permissions = null;
+    	$hasPermission = null;
+
+    	$roles = Role::all()->pluck('name');
+
+    	if (!empty($role)) {
+    		$getRole = Role::findByName ($role);
+
+    		$hasPermission = DB::table('role_has_permissions')
+    		->select('permissions.name')
+    		->join('permissions','role_has_permissions.permission_id','=','permissions.id')
+    		->where('role_id',$getRole->id)->get()->pluck('name')->all();
+
+    		$permissions = Permission::all()->pluck('name');
+    	}
+    	return view('users.role_permission',compact('roles','permissions','hasPermission'));
+    }
+
+    public function addPermission(Request $request)
+    {
+    	$this->validate($request,[
+    		'name' => 'required|string|unique:permissions'
+    	]);
+    	$permission = Permission::firstOrCreate([
+    		'name' => $request->name
+    	]);
+    	return redirect()->back();
+    }
+    public function setRolePermission(Request $request,$role)
+    {
+    	$role = Role::findByname($role);
+    	$role->syncPermissions($request->permission);
+    	return redirect()->back()->with(['success' => 'Permission to Relove Saved']);
+    }
     public function edit($id)
     {
     	$user = User::findOrFail($id);
-    	return view('users.edit',compact('users'));
+    	return view('users.edit',compact('user'));
     }
 
     public function update(Request $request,$id)
     {
     	$this->validate($request,[
     		'name' => 'required|string|max:100',
-    		'email' => 'required|email|exist:users,email',
-    		'name' => 'nullable|min:6'
+    		'email' => 'required|email|exists:users,email',
+    		'password' => 'nullable|min:6'
     	]);
 
     	$user = User::findOrFail($id);

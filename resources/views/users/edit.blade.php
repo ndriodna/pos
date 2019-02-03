@@ -44,12 +44,12 @@ Edit Users
 							</div>
 							<div class="form-group">
 								<label for="">Email</label>
-								<input type="email" name="email" value="{{$user->email}}" class="form-control {{$errors->has('email') ? 'is-invalid:':''}}" required>
+								<input type="email" name="email" value="{{$user->email}}" class="form-control {{$errors->has('email') ? 'is-invalid:':''}}" required readonly>
 								<p class="text-danger">{{$errors->first('email')}}</p>
 							</div>
 							<div class="form-group">
 								<label for="">Password</label>
-								<input type="password" name="password" class="form-control {{$errors->has('password') ? 'is-invalid:':''}}" required>
+								<input type="password" name="password" class="form-control {{$errors->has('password') ? 'is-invalid:':''}}">
 								<p class="text-danger">{{$errors->first('password')}}</p>
 								<p class="text-warning">Biarkan Kosong, jika tidak ingin mengganti password</p>
 							</div>

@@ -21,7 +21,7 @@
                         name="email" 
                         class="form-control {{ $errors->has('email') ? ' is-invalid' : '' }}" 
                         placeholder="{{ __('E-Mail Address') }}"
-                        value="{{ old('email') }}">
+                        value="{{ old('email') }}"autofocus>
                     <span class="fa fa-envelope form-control-feedback"> {{ $errors->first('email') }}</span>
                 </div>
                 <div class="form-group has-feedback">
